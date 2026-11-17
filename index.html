@@ -1,198 +1,381 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Towards Financial World Modeling: An Open Efficiency Question</title>
-<meta name="description" content="A Grand Challenge paper at the AXIOM workshop (NeurIPS 2026): when does latent-dynamics structure make a sequence model compute-efficient?">
-<meta property="og:title" content="Towards Financial World Modeling: An Open Efficiency Question">
-<meta property="og:description" content="Grand Challenge paper, AXIOM workshop at NeurIPS 2026.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1420'/%3E%3Cpath d='M10 44 L22 30 L32 38 L44 18 L54 26' fill='none' stroke='%2334d399' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>
-:root{
-  --ink:#0b1420; --ink2:#111d2e; --line:#22324a; --paper:#f7f8fa; --card:#ffffff; --text:#1c2733; --muted:#5b6876;
-  --up:#34d399; --up-d:#0f9f6e; --amber:#f5b942; --blue:#60a5fa; --rose:#fb7185; --rule:#e3e7ec;
-  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);font-size:clamp(15px,1.05vw + 11px,17px);line-height:1.6;-webkit-font-smoothing:antialiased}
-a{color:inherit}
-.wrap{width:min(1040px,100% - 32px);margin-inline:auto}
-/* ---------- hero ---------- */
-.hero{position:relative;background:radial-gradient(1200px 500px at 80% -10%,#17304a 0%,transparent 60%),linear-gradient(180deg,var(--ink) 0%,var(--ink2) 100%);color:#eaf0f6;overflow:hidden}
-.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.9}
-.hero .wrap{position:relative;padding:clamp(28px,5vw,56px) 0 clamp(30px,5vw,60px)}
-.tick{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;font-family:var(--mono);font-size:.74em;letter-spacing:.04em;text-transform:uppercase;color:#9fb2c6}
-.tick b{color:var(--up);font-weight:600}
-.tick .dot{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:pulse 2.2s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
-h1{font-family:var(--serif);font-weight:650;font-size:clamp(30px,5.2vw,58px);line-height:1.06;letter-spacing:-.015em;margin:.45em 0 .35em;max-width:17ch}
-h1 em{font-style:normal;color:var(--up)}
-.lede{font-size:1.1em;color:#c6d3e0;max-width:60ch;margin:0 0 1.3em}
-.authors{display:flex;flex-wrap:wrap;gap:6px 22px;margin:0 0 4px;padding:0;list-style:none;font-weight:600}
-.authors sup{color:var(--amber);font-weight:500;margin-left:2px}
-.aff{color:#9fb2c6;font-size:.9em;margin:0 0 1.5em}
-.aff sup{color:var(--amber)}
-.btns{display:flex;flex-wrap:wrap;gap:10px}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:600;font-size:.92em;border:1px solid #33475f;color:#eaf0f6;background:rgba(255,255,255,.04);transition:transform .15s,background .15s,border-color .15s;cursor:pointer;font-family:inherit}
-.btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.1);border-color:#56708f}
-.btn.primary{background:var(--up);border-color:var(--up);color:#06281c}
-.btn.primary:hover{background:#5fe0b1}
-.btn svg{width:16px;height:16px}
-.note{font-family:var(--mono);font-size:.68em;color:#6f859b;margin-top:22px}
-/* ---------- sections ---------- */
-section{padding:clamp(30px,5vw,58px) 0}
-.kicker{font-family:var(--mono);font-size:.74em;letter-spacing:.08em;text-transform:uppercase;color:var(--up-d);margin:0 0 .5em}
-h2{font-family:var(--serif);font-weight:650;font-size:clamp(23px,3vw,34px);line-height:1.15;letter-spacing:-.01em;margin:0 0 .6em;max-width:26ch}
-p{margin:0 0 1em;max-width:68ch}
-.question{background:var(--card);border:1px solid var(--rule);border-left:5px solid var(--up);border-radius:14px;padding:clamp(18px,3vw,30px)}
-.question p{font-family:var(--serif);font-size:clamp(19px,2.3vw,26px);line-height:1.35;max-width:36ch;margin:0;color:var(--ink)}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px}
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border:1px solid var(--rule);border-radius:14px;background:var(--card);overflow:hidden;margin:6px 0 22px}
-.facts div{padding:16px 18px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:0 -1px -1px 0}
-.facts b{display:block;font-family:var(--serif);font-size:clamp(26px,3.4vw,38px);line-height:1.05;color:var(--ink)}
-.facts span{font-size:.86em;color:var(--muted)}
-.panel{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:20px 22px}
-.panel h3{margin:0 0 .5em;font-size:1.02em;display:flex;align-items:center;gap:9px}
-.panel p{margin:0;color:#34414f;font-size:.96em}
-.chip{font-family:var(--mono);font-size:.7em;padding:3px 8px;border-radius:6px;background:#eaf7f1;color:var(--up-d);font-weight:600;letter-spacing:.03em}
-.chip.b{background:#eaf2fd;color:#2563a8}
-.caveat{border-left:3px solid var(--amber);padding:2px 0 2px 14px;color:#4a5562;font-size:.96em;margin-top:20px}
-.dark{background:var(--ink);color:#dfe8f1}
-.dark h2{color:#fff}.dark .kicker{color:var(--up)}.dark p{color:#b9c7d6}
-.qs{counter-reset:q;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:16px;margin-top:8px}
-.q{counter-increment:q;border:1px solid var(--line);border-radius:14px;padding:20px 20px 18px;background:linear-gradient(180deg,#132236,#0f1b2b);transition:border-color .2s,transform .2s}
-.q:hover{border-color:var(--up);transform:translateY(-2px)}
-.q::before{content:"Q" counter(q);font-family:var(--mono);font-weight:600;color:var(--up);font-size:.82em;letter-spacing:.06em}
-.q h3{margin:.35em 0 .4em;color:#fff;font-size:1.04em;line-height:1.3}
-.q p{margin:0;font-size:.93em;color:#aebdcc}
-pre{background:var(--ink);color:#d6e2ee;font-family:var(--mono);font-size:.8em;line-height:1.55;padding:18px 20px;border-radius:14px;overflow-x:auto;margin:0;position:relative}
-.bib{position:relative}
-.copy{position:absolute;top:10px;right:10px;padding:6px 12px;font-size:.78em}
-footer{padding:26px 0 40px;color:var(--muted);font-size:.88em;border-top:1px solid var(--rule)}
-footer a{color:var(--up-d);text-decoration:none;font-weight:600}
-.js .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s}
-.js .reveal.in{opacity:1;transform:none}
-@media (max-width:820px){.hero canvas{opacity:.3}}
-@media (prefers-reduced-motion:reduce){.js .reveal{opacity:1;transform:none}.tick .dot{animation:none}html{scroll-behavior:auto}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Towards Financial World Modeling: An Open Efficiency Question | NeurIPS 2026 AXIOM Workshop</title>
+  <meta name="description" content="Accepted Grand Challenge paper at the AXIOM workshop, NeurIPS 2026: when does latent-dynamics structure make a sequence model compute-efficient?">
+  <link rel="canonical" href="https://axiom-fin.github.io/">
+  <meta property="og:title" content="Towards Financial World Modeling: An Open Efficiency Question">
+  <meta property="og:description" content="Accepted Grand Challenge paper at the AXIOM workshop, NeurIPS 2026.">
+  <meta property="og:url" content="https://axiom-fin.github.io/">
+  <meta name="theme-color" content="#14306b">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314306b'/%3E%3Cpath d='M10 44 L22 30 L32 38 L44 18 L54 26' fill='none' stroke='%2335b98a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans:400,500,700|Noto+Sans:400,600,700|Castoro&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+  <link rel="stylesheet" href="static/css/axiom.css?v=1">
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <style>
+    /* additions to the shared project-page theme */
+    .clear-nav .brand{display:inline-flex;align-items:center;gap:.5rem;font-family:'Google Sans',sans-serif;font-weight:700;color:var(--navy);white-space:nowrap}
+    .clear-nav .brand svg{width:26px;height:26px}
+    a.venue-badge,a.tag-accepted-green{text-decoration:none;transition:transform .15s,box-shadow .15s}
+    a.venue-badge:hover,a.tag-accepted-green:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(20,48,107,.16)}
+    .track-chip{display:inline-flex;align-items:center;gap:.35rem;font-family:'Google Sans',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#8a5a00;background:#fff4d6;border:1px solid #f1d58a;border-radius:999px;padding:.28rem .7rem}
+    .tape{position:relative;margin:1.1rem auto .2rem;max-width:760px;height:clamp(110px,18vw,160px);border-radius:18px;overflow:hidden;background:radial-gradient(700px 240px at 85% -20%,#1f4f86 0%,transparent 60%),linear-gradient(180deg,#0d1b33,#14306b);box-shadow:0 14px 34px rgba(20,48,107,.22)}
+    .tape canvas{position:absolute;inset:0;width:100%;height:100%}
+    .tape .lg{position:absolute;left:14px;bottom:10px;display:flex;gap:14px;font-size:.72rem;color:#c9d7ea;font-family:'Noto Sans',sans-serif}
+    .tape .lg i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+    .tape-note{font-size:.74rem;color:var(--muted);margin:.35rem 0 1rem}
+    /* acceptance banner */
+    .accept{position:relative;max-width:980px;margin:0 auto;border-radius:20px;padding:2px;background:var(--grad);box-shadow:0 18px 44px rgba(20,48,107,.18)}
+    .accept .in{display:flex;flex-wrap:wrap;align-items:center;gap:1.1rem 1.6rem;background:#fff;border-radius:18px;padding:1.3rem 1.5rem;position:relative;overflow:hidden}
+    .accept .in::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(53,185,138,.14),transparent);animation:sheen 4.5s ease-in-out infinite}
+    @keyframes sheen{0%,55%{left:-60%}100%{left:130%}}
+    .accept .seal{flex:0 0 auto;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--grad);color:#fff;font-size:1.7rem;box-shadow:0 0 0 6px rgba(53,185,138,.16)}
+    .accept .tx{flex:1 1 300px;text-align:left;position:relative;z-index:1}
+    .accept .tx .k{font-family:'Google Sans',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+    .accept .tx h2{font-family:'Google Sans',sans-serif;font-weight:700;font-size:clamp(1.25rem,2.6vw,1.7rem);line-height:1.2;color:var(--navy);margin:.15rem 0 .3rem}
+    .accept .tx h2 a{color:inherit;text-decoration:underline;text-decoration-color:rgba(26,143,134,.45);text-underline-offset:4px}
+    .accept .tx h2 a:hover{text-decoration-color:var(--teal)}
+    .accept .tx p{margin:0;color:var(--muted);font-size:.95rem}
+    .accept .go{flex:0 1 auto;display:flex;flex-direction:column;gap:.5rem;position:relative;z-index:1}
+    .accept .go a{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:999px;padding:.55rem 1.05rem;font-family:'Google Sans',sans-serif;font-weight:700;font-size:.9rem;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s}
+    .accept .go a.p{background:var(--navy);color:#fff}
+    .accept .go a.s{background:var(--tint-teal);color:var(--deep);border:1px solid #cfe9e2}
+    .accept .go a:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(20,48,107,.18)}
+    .accept img.nl{height:54px;width:auto}
+    .rq .ans.open{background:#fff4d6;color:#8a5a00;border-color:#f1d58a}
+    .member .ph .initials{display:grid;place-items:center;width:100%;height:100%;font-family:'Google Sans',sans-serif;font-weight:700;font-size:2rem;color:#fff;background:var(--grad)}
+    @media (prefers-reduced-motion:reduce){.accept .in::after{animation:none}}
+  </style>
 </head>
 <body>
-<header class="hero">
-  <canvas id="tape" aria-hidden="true"></canvas>
-  <div class="wrap">
-    <div class="tick"><span class="dot"></span><b>Grand Challenge</b><span>AXIOM Workshop</span><span>NeurIPS 2026</span></div>
-    <h1>Towards Financial World Modeling: <em>An Open Efficiency Question</em></h1>
-    <p class="lede">A compact latent world model matched or exceeded a Transformer on raw price data and trained in a fraction of the time. No existing theory explains why. We ask the community to help identify the general principle, if one exists.</p>
-    <ul class="authors">
-      <li>Tirtho Roy<sup>1</sup></li><li>Nilutpaul Sarker Yash<sup>1</sup></li><li>Ushashi Bhattacharjee<sup>1</sup></li><li>Adrito Roy<sup>2</sup></li>
-    </ul>
-    <p class="aff"><sup>1</sup>Iowa State University &nbsp; <sup>2</sup>Notre Dame College</p>
-    <div class="btns">
-      <a class="btn primary" href="financial_world_modeling_axiom2026.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>Paper (PDF)</a>
-      <a class="btn" href="https://openreview.net/forum?id=1zswKubgPs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>OpenReview</a>
-      <a class="btn" href="#cite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h4v4H7zM13 13h4v4h-4zM11 9h2a2 2 0 0 1 2 2v2"/></svg>BibTeX</a>
-      <a class="btn" href="https://axiom-neurips2026.github.io/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Workshop</a>
-    </div>
-    <p class="note">Background animation: an illustration of a noisy series and a smooth latent path. It is not data from the paper.</p>
-  </div>
-</header>
 
-<main>
-<section>
-  <div class="wrap reveal">
-    <p class="kicker">The open question</p>
-    <div class="question"><p>Before either model is trained, what property of a time series predicts that latent-dynamics structure will beat unconstrained attention?</p></div>
+<nav class="clear-nav" aria-label="Sections">
+  <div class="inner">
+    <a class="brand" href="#top" aria-label="Home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#14306b"/><path d="M10 44 L22 30 L32 38 L44 18 L54 26" fill="none" stroke="#35b98a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Financial World Modeling</a>
+    <div class="links">
+      <a href="#accepted">Accepted</a>
+      <a href="#question">Question</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#subquestions">Sub-questions</a>
+      <a href="#team">Team</a>
+      <a href="#BibTeX">BibTeX</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero clear-hero" id="top">
+  <div class="hero-body">
+    <div class="container is-max-desktop has-text-centered">
+
+      <div class="venue-row">
+        <a class="venue-badge" href="https://axiom-neurips2026.github.io/" target="_blank" rel="noopener"><span class="nips">NeurIPS 2026</span> AXIOM Workshop</a>
+        <a class="tag-accepted-green" href="https://neurips.cc/virtual/2026/157010" target="_blank" rel="noopener">Accepted</a>
+        <span class="track-chip"><i class="fas fa-flag-checkered"></i> Grand Challenge</span>
+      </div>
+
+      <div class="tape" role="img" aria-label="Illustration: a noisy series and a smooth latent path">
+        <canvas id="tape"></canvas>
+        <div class="lg"><span><i style="background:#9fb4cf"></i>Observed Series</span><span><i style="background:#35b98a"></i>Latent State</span></div>
+      </div>
+      <p class="tape-note">Illustration of the idea of a latent state under a noisy series. It is not data from the paper.</p>
+
+      <h1 class="title is-1 publication-title">
+        <span class="grad-text">Towards Financial World Modeling:</span> An Open Efficiency Question
+      </h1>
+
+      <div class="is-size-5 publication-authors">
+        <div class="author-list">
+          <span class="author-block"><a href="https://tirtho149.github.io/" target="_blank" rel="noopener">Tirtho Roy</a><sup>1,&#9993;</sup>,</span>
+          <span class="author-block"><a href="https://www.linkedin.com/in/nilutpaul-sarker-yash/" target="_blank" rel="noopener">Nilutpaul Sarker Yash</a><sup>1</sup>,</span>
+          <span class="author-block"><a href="https://www.linkedin.com/in/ushashi-bhattacharjee/" target="_blank" rel="noopener">Ushashi Bhattacharjee</a><sup>1</sup>,</span>
+          <span class="author-block"><a href="https://www.linkedin.com/in/adrito-roy-53486b2ab/" target="_blank" rel="noopener">Adrito Roy</a><sup>2</sup></span>
+        </div>
+      </div>
+
+      <div class="affils">
+        <span class="aff"><sup>1</sup>Iowa State University</span>
+        <span class="aff"><sup>2</sup>Notre Dame College</span>
+      </div>
+      <p class="corr">&#9993; Corresponding author: <a href="mailto:tirtho@iastate.edu">tirtho@iastate.edu</a></p>
+
+      <div class="venue-block">
+        <a href="https://neurips.cc/virtual/2026/157010" target="_blank" rel="noopener" class="venue-logo">
+          <img src="static/images/neurips_logo.svg" alt="NeurIPS: Neural Information Processing Systems">
+        </a>
+        <p class="venue-line">
+          NeurIPS 2026 Workshop AXIOM: Foundations of Efficient Deep Learning, Grand Challenges Track
+          <span class="sub">Paris, France &middot; December 13, 2026</span>
+        </p>
+      </div>
+
+      <div class="publication-links">
+        <span class="link-block"><a href="static/paper/paper.pdf" target="_blank" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-file-pdf"></i></span><span>Paper</span></a></span>
+        <span class="link-block"><a href="https://openreview.net/forum?id=1zswKubgPs" target="_blank" rel="noopener" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="ai ai-openreview"></i></span><span>OpenReview</span></a></span>
+        <span class="link-block"><a href="https://neurips.cc/virtual/2026/157010" target="_blank" rel="noopener" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-award"></i></span><span>NeurIPS Page</span></a></span>
+        <span class="link-block"><a href="https://axiom-neurips2026.github.io/" target="_blank" rel="noopener" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-globe"></i></span><span>Workshop</span></a></span>
+        <span class="link-block"><a href="#BibTeX" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fas fa-quote-right"></i></span><span>BibTeX</span></a></span>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat"><div class="num">319</div><div class="lbl">equities<br>Yahoo Finance OHLCV</div></div>
+        <div class="stat"><div class="num">8</div><div class="lbl">model families<br>compared</div></div>
+        <div class="stat"><div class="num">~40%</div><div class="lbl">of the Transformer's<br>wall-clock training time</div></div>
+        <div class="stat"><div class="num">3</div><div class="lbl">open<br>sub-questions</div></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section style="padding-top:0">
-  <div class="wrap reveal">
-    <p class="kicker">The observation</p>
-    <h2>One benchmark, reported as an anchor and not as a general result</h2>
-    <p>A world model assumes that observations arise from a low-dimensional latent state with simple dynamics. The assumption either matches the structure of a domain, and the model trains with less compute, or it does not, and the model loses accuracy to an unconstrained sequence model. We have no way to tell which case applies before training.</p>
-    <div class="facts">
-      <div><b>319</b><span>equities in the panel</span></div>
-      <div><b>2018&ndash;2026</b><span>Yahoo Finance OHLCV records</span></div>
-      <div><b>8</b><span>model families compared</span></div>
-      <div><b>~40%</b><span>of the Transformer's wall-clock training time</span></div>
-    </div>
-    <div class="grid2">
-      <div class="panel"><h3><span class="chip">RAW INPUT</span>Price and volume only</h3><p>A compact world model with a variational encoder and a GRU latent transition reached the highest directional accuracy of the eight model families. It finished ahead of a Transformer that was trained under an identical budget.</p></div>
-      <div class="panel"><h3><span class="chip b">+ 91 INDICATORS</span>Engineered features added</h3><p>The world model stayed tied for the best quality. The Transformer was the only model whose quality fell when the indicators were added.</p></div>
-    </div>
-    <p class="caveat">We do not know whether the observation reflects real structure in price dynamics or an artifact of this dataset and this training budget.</p>
-  </div>
-</section>
-
-<section class="dark">
-  <div class="wrap reveal">
-    <p class="kicker">Why it is unresolved</p>
-    <h2>Current theory compares sizes, not inductive biases</h2>
-    <div class="grid2">
-      <p>Scaling laws describe loss against model size, data, compute and numerical precision for a fixed architecture. They do not compare inductive biases, so they cannot say which bias is compute-optimal for a given data-generating process.</p>
-      <p>Recent Transformer-based world models set performance records for control. That work does not explain why latent-dynamics structure should be efficient for prediction on noisy financial series. If the matching conditions were known in advance, a practitioner could choose a small structured model with confidence and skip the empirical comparison.</p>
-    </div>
-    <p class="kicker" style="margin-top:26px">Three sub-questions for the community</p>
-    <div class="qs">
-      <div class="q"><h3>Which property predicts the winner?</h3><p>Candidates include autocorrelation, regime persistence and effective latent dimensionality, each measured before either model is trained.</p></div>
-      <div class="q"><h3>Does the observation extend?</h3><p>The open cases are assets beyond large-cap equities and time series outside finance.</p></div>
-      <div class="q"><h3>How large should the latent state be?</h3><p>A principled rule for latent dimensionality would play the role that compute-optimal frontiers play for model size.</p></div>
+<!-- Acceptance -->
+<section class="section" id="accepted" style="padding-top:2.2rem;padding-bottom:2.2rem">
+  <div class="container">
+    <div class="accept">
+      <div class="in">
+        <div class="seal"><i class="fas fa-check"></i></div>
+        <div class="tx">
+          <div class="k">Accepted Paper</div>
+          <h2>Accepted at <a href="https://neurips.cc/virtual/2026/157010" target="_blank" rel="noopener">NeurIPS 2026</a>, <a href="https://axiom-neurips2026.github.io/" target="_blank" rel="noopener">AXIOM Workshop</a></h2>
+          <p>One of seven accepted Grand Challenges at AXIOM: Foundations of Efficient Deep Learning. The paper and all four authors are listed on the official NeurIPS site.</p>
+        </div>
+        <div class="go">
+          <a class="p" href="https://neurips.cc/virtual/2026/157010" target="_blank" rel="noopener"><i class="fas fa-award"></i> Our Paper on neurips.cc</a>
+          <a class="s" href="https://neurips.cc/virtual/2026/workshop/137620" target="_blank" rel="noopener"><i class="fas fa-list"></i> Workshop Program</a>
+          <a class="s" href="https://axiom-neurips2026.github.io/" target="_blank" rel="noopener"><i class="fas fa-globe"></i> AXIOM Accepted Papers</a>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<section id="cite">
-  <div class="wrap reveal">
-    <p class="kicker">Cite</p>
-    <h2>BibTeX</h2>
-    <div class="bib">
-      <button class="btn copy" id="copy" style="color:#eaf0f6">Copy</button>
-<pre id="bibtex">@inproceedings{roy2026towards,
+<!-- The question -->
+<section class="section is-tint" id="question">
+  <div class="container">
+    <div class="hypo">
+      <div class="hd"><i class="fas fa-question-circle"></i> The Open Question</div>
+      <div class="bd">
+        A world model assumes that observations arise from a low-dimensional latent state with simple dynamics.
+        The assumption either matches the structure of a domain, and the model trains with less compute, or it does
+        not, and the model loses accuracy to an unconstrained sequence model.
+        <b>We have no way to tell which case applies before training.</b>
+        <div class="tldr">
+          <b class="k">TL;DR</b>
+          On one benchmark of 319 equities, a compact latent world model matched or exceeded a Transformer's
+          directional accuracy on raw price data at about 40% of its wall-clock training time. No existing theory
+          explains why. We ask the community to help identify the general principle, if one exists.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Abstract -->
+<section class="section" id="abstract">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <span class="sec-kicker">Overview</span>
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            We pose an open question about latent world models as an efficiency mechanism, not a solved one. On a
+            Yahoo Finance benchmark of 319 equities (2018&ndash;2026), a compact latent world model matched or exceeded
+            a Transformer's directional accuracy on raw price data while training in a fraction of the time. No
+            existing theory explains why imposing explicit latent-dynamics structure should be compute-efficient
+            here, or predicts when it should be preferred over unconstrained attention elsewhere. This
+            single-dataset observation serves only as a concrete anchor; we ask the community to help identify the
+            general principle, if one exists.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Evidence -->
+<section class="section is-tint" id="evidence">
+  <div class="container">
+    <div class="has-text-centered" style="margin-bottom:1.6rem">
+      <span class="sec-kicker">Evidence</span>
+      <h2 class="title is-3">One benchmark, two observations</h2>
+    </div>
+    <p class="q-pill">A curated panel of 319 companies with Yahoo Finance OHLCV records from 2018 to 2026.
+      Eight model families were compared, and the Transformer was trained under an identical budget.</p>
+    <div class="rq-grid">
+      <div class="rq">
+        <div class="rq-head"><span class="rq-id">OBS 1</span><span class="rq-topic">Raw price and volume</span><span class="ans yes">World model first</span></div>
+        <h3>Which model family reaches the highest directional accuracy on raw input?</h3>
+        <div class="big"><span class="v">~40%</span><span class="cap">of the Transformer's wall-clock training time</span></div>
+        <p>A compact world model with a variational encoder and a GRU latent transition reached the highest
+          directional accuracy of the eight model families. It finished ahead of the Transformer.</p>
+        <div class="chips"><span class="chip">Variational encoder</span><span class="chip">GRU latent transition</span></div>
+      </div>
+      <div class="rq">
+        <div class="rq-head"><span class="rq-id">OBS 2</span><span class="rq-topic">91 engineered indicators added</span><span class="ans closed">Tied for best</span></div>
+        <h3>Does the ordering survive when engineered indicators are added?</h3>
+        <div class="big"><span class="v">91</span><span class="cap">engineered indicators added to the input</span></div>
+        <p>The world model stayed tied for the best quality. The Transformer was the only model whose quality fell
+          when the indicators were added.</p>
+        <div class="chips"><span class="chip">Transformer alone was harmed</span></div>
+      </div>
+    </div>
+    <div class="disc" style="margin-top:1.4rem">
+      <div class="box">
+        <h4><span class="icon"><i class="fas fa-exclamation-triangle"></i></span> Caveat</h4>
+        <ul><li>We do not know whether the observations reflect real structure in price dynamics or an artifact of this dataset and this training budget.</li></ul>
+      </div>
+      <div class="box">
+        <h4><span class="icon"><i class="fas fa-book-open"></i></span> Why it is unresolved</h4>
+        <ul>
+          <li>Scaling laws describe loss against size, data, compute and numerical precision for a fixed architecture. They do not compare inductive biases.</li>
+          <li>Recent Transformer-based world models set performance records for control. That work does not explain why latent-dynamics structure should be efficient for prediction on noisy financial series.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Sub-questions -->
+<section class="section" id="subquestions">
+  <div class="container">
+    <div class="has-text-centered" style="margin-bottom:1.6rem">
+      <span class="sec-kicker">For the community</span>
+      <h2 class="title is-3">Three sub-questions</h2>
+    </div>
+    <div class="rq-grid">
+      <div class="rq">
+        <div class="rq-head"><span class="rq-id">Q1</span><span class="rq-topic">Predictor</span><span class="ans open">Open</span></div>
+        <h3>What property of a time series predicts the winner before either model is trained?</h3>
+        <p>Candidates include autocorrelation, regime persistence and effective latent dimensionality.</p>
+      </div>
+      <div class="rq">
+        <div class="rq-head"><span class="rq-id">Q2</span><span class="rq-topic">Scope</span><span class="ans open">Open</span></div>
+        <h3>Does the observation hold beyond large-cap equities?</h3>
+        <p>The open cases include other asset classes and time series outside finance.</p>
+      </div>
+      <div class="rq wide">
+        <div class="rq-head"><span class="rq-id">Q3</span><span class="rq-topic">Sizing</span><span class="ans open">Open</span></div>
+        <h3>Is there a principled way to size the latent dimensionality of a world model?</h3>
+        <p>Such a rule would be analogous to compute-optimal frontiers for model size. With the matching conditions
+          known in advance, a practitioner could choose a small structured model with confidence and skip the
+          empirical comparison.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team -->
+<section class="section is-tint" id="team">
+  <div class="container">
+    <div class="has-text-centered" style="margin-bottom:1.6rem">
+      <span class="sec-kicker">People</span>
+      <h2 class="title is-3">Team</h2>
+    </div>
+    <div class="team">
+      <div class="member">
+        <div class="ph"><img src="static/images/team/Tirtho.png" alt="Tirtho Roy"></div>
+        <div class="nm"><a href="https://tirtho149.github.io/" target="_blank" rel="noopener">Tirtho Roy</a></div>
+        <div class="af">Iowa State University</div>
+        <div class="role">Corresponding author</div>
+      </div>
+      <div class="member">
+        <div class="ph"><span class="initials">NY</span></div>
+        <div class="nm"><a href="https://www.linkedin.com/in/nilutpaul-sarker-yash/" target="_blank" rel="noopener">Nilutpaul Sarker Yash</a></div>
+        <div class="af">Iowa State University</div>
+      </div>
+      <div class="member">
+        <div class="ph"><img src="static/images/team/Ushashi.png" alt="Ushashi Bhattacharjee"></div>
+        <div class="nm"><a href="https://www.linkedin.com/in/ushashi-bhattacharjee/" target="_blank" rel="noopener">Ushashi Bhattacharjee</a></div>
+        <div class="af">Iowa State University</div>
+      </div>
+      <div class="member">
+        <div class="ph"><img src="static/images/team/Adrito.png" alt="Adrito Roy"></div>
+        <div class="nm"><a href="https://www.linkedin.com/in/adrito-roy-53486b2ab/" target="_blank" rel="noopener">Adrito Roy</a></div>
+        <div class="af">Notre Dame College</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BibTeX -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <div class="bib-wrap">
+      <button class="copy-btn" type="button" id="copyBib"><i class="far fa-copy"></i> Copy</button>
+      <pre><code id="bibtex">@inproceedings{roy2026towards,
   title     = {Towards Financial World Modeling: An Open Efficiency Question},
-  author    = {Tirtho Roy and Nilutpaul Sarker Yash and Ushashi Bhattacharjee and Adrito Roy},
-  booktitle = {AXIOM: Foundations of Efficient Deep Learning},
+  author    = {Roy, Tirtho and Yash, Nilutpaul Sarker and Bhattacharjee, Ushashi and Roy, Adrito},
+  booktitle = {NeurIPS 2026 Workshop AXIOM: Foundations of Efficient Deep Learning},
   year      = {2026},
   url       = {https://openreview.net/forum?id=1zswKubgPs}
-}</pre>
+}</code></pre>
     </div>
-    <p style="margin-top:18px">Ideas, counterexamples and datasets are welcome on the <a href="https://openreview.net/forum?id=1zswKubgPs" style="color:var(--up-d);font-weight:600">OpenReview forum</a> or by email to <a href="mailto:tirtho@iastate.edu" style="color:var(--up-d);font-weight:600">tirtho@iastate.edu</a>.</p>
+    <p>Ideas, counterexamples and datasets are welcome on the
+      <a href="https://openreview.net/forum?id=1zswKubgPs" target="_blank" rel="noopener">OpenReview forum</a> or by email.</p>
   </div>
 </section>
-</main>
 
-<footer><div class="wrap">Grand Challenge paper at <a href="https://axiom-neurips2026.github.io/">AXIOM: Foundations of Efficient Deep Learning</a>, a workshop at NeurIPS 2026.</div></footer>
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered">
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank" rel="noopener">Academic Project Page Template</a>,
+            which was adopted from the <a href="https://nerfies.github.io" target="_blank" rel="noopener">Nerfies</a> project page.<br>
+            This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
 
 <script>
-document.documentElement.classList.add('js');
-// Hero background: an illustrative noisy series (thin) and a smooth latent path (thick). Not data from the paper.
-(function(){
-  const c=document.getElementById('tape'),x=c.getContext('2d');let w,h,t=0,pts=[],raf;
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function size(){const r=c.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);w=r.width;h=r.height;c.width=w*d;c.height=h*d;x.setTransform(d,0,0,d,0,0);seed()}
-  function seed(){pts=[];let v=0,s=12345;const rnd=()=>{s=(s*1664525+1013904223)%4294967296;return s/4294967296-.5};
-    for(let i=0;i<260;i++){v=v*.96+rnd()*1.2;pts.push({n:rnd()*1.6,l:v})}}
-  function draw(){x.clearRect(0,0,w,h);const n=pts.length,wide=w>820,x0=wide?w*.64:w*.05,span=wide?w*.4:w*.98,base=h*(wide?.5:.8),amp=Math.min(h*.2,90),off=t*.12;
-    x.strokeStyle='rgba(255,255,255,.035)';x.lineWidth=1;for(let g=1;g<6;g++){x.beginPath();x.moveTo(0,h*g/6);x.lineTo(w,h*g/6);x.stroke()}
-    const y=(i,noisy)=>{const a=pts[(i+Math.floor(off))%n],b=pts[(i+Math.floor(off)+1)%n],f=off%1,l=a.l+(b.l-a.l)*f,nn=a.n+(b.n-a.n)*f;
-      return base-(l/3.2+(noisy?nn/4.2:0))*amp};
-    x.beginPath();for(let i=0;i<140;i++){const px=x0+i/139*span;i?x.lineTo(px,y(i,true)):x.moveTo(px,y(i,true))}
-    x.strokeStyle='rgba(148,170,196,.38)';x.lineWidth=1;x.stroke();
-    const gr=x.createLinearGradient(x0,0,x0+span,0);gr.addColorStop(0,'rgba(52,211,153,0)');gr.addColorStop(.35,'rgba(52,211,153,.85)');gr.addColorStop(1,'rgba(96,165,250,.9)');
-    x.beginPath();for(let i=0;i<140;i++){const px=x0+i/139*span;i?x.lineTo(px,y(i,false)):x.moveTo(px,y(i,false))}
-    x.strokeStyle=gr;x.lineWidth=2.4;x.shadowColor='rgba(52,211,153,.5)';x.shadowBlur=12;x.stroke();x.shadowBlur=0;
-    if(!reduce){t++;raf=requestAnimationFrame(draw)}}
-  addEventListener('resize',()=>{cancelAnimationFrame(raf);size();draw()});size();draw();
-})();
-// reveal on scroll
-(function(){const els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(e=>e.classList.add('in'));return}
-  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});els.forEach(e=>io.observe(e))})();
-// copy BibTeX
-document.getElementById('copy').addEventListener('click',function(){const b=this;navigator.clipboard.writeText(document.getElementById('bibtex').textContent).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1500)})});
+  // Hero illustration: a noisy series (thin) and a smooth latent path (thick). Not data from the paper.
+  (function () {
+    var c = document.getElementById('tape'); if (!c) return;
+    var x = c.getContext('2d'), w, h, t = 0, pts = [], raf;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function seed() { pts = []; var v = 0, s = 12345; function rnd() { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296 - .5; }
+      for (var i = 0; i < 260; i++) { v = v * .96 + rnd() * 1.2; pts.push({ n: rnd() * 1.6, l: v }); } }
+    function size() { var r = c.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2); w = r.width; h = r.height; c.width = w * d; c.height = h * d; x.setTransform(d, 0, 0, d, 0, 0); }
+    function draw() {
+      x.clearRect(0, 0, w, h); var n = pts.length, base = h * .5, amp = h * .3, off = t * .1, N = 150, i, px;
+      x.strokeStyle = 'rgba(255,255,255,.05)'; x.lineWidth = 1;
+      for (i = 1; i < 4; i++) { x.beginPath(); x.moveTo(0, h * i / 4); x.lineTo(w, h * i / 4); x.stroke(); }
+      function y(k, noisy) { var a = pts[(k + Math.floor(off)) % n], b = pts[(k + Math.floor(off) + 1) % n], f = off % 1;
+        return base - ((a.l + (b.l - a.l) * f) / 3.2 + (noisy ? (a.n + (b.n - a.n) * f) / 3.6 : 0)) * amp; }
+      x.beginPath(); for (i = 0; i < N; i++) { px = i / (N - 1) * w; i ? x.lineTo(px, y(i, true)) : x.moveTo(px, y(i, true)); }
+      x.strokeStyle = 'rgba(159,180,207,.55)'; x.lineWidth = 1; x.stroke();
+      var g = x.createLinearGradient(0, 0, w, 0); g.addColorStop(0, '#5aa9e6'); g.addColorStop(1, '#35b98a');
+      x.beginPath(); for (i = 0; i < N; i++) { px = i / (N - 1) * w; i ? x.lineTo(px, y(i, false)) : x.moveTo(px, y(i, false)); }
+      x.strokeStyle = g; x.lineWidth = 2.6; x.shadowColor = 'rgba(53,185,138,.55)'; x.shadowBlur = 12; x.stroke(); x.shadowBlur = 0;
+      if (!reduce) { t++; raf = requestAnimationFrame(draw); }
+    }
+    window.addEventListener('resize', function () { cancelAnimationFrame(raf); size(); draw(); });
+    seed(); size(); draw();
+  })();
+  (function () {
+    var btn = document.getElementById('copyBib'); if (!btn) return;
+    btn.addEventListener('click', function () {
+      var txt = document.getElementById('bibtex').innerText;
+      var done = function () { btn.innerHTML = 'Copied!'; setTimeout(function () { btn.innerHTML = '<i class="far fa-copy"></i> Copy'; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(done, function () {}); }
+      else { var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {} document.body.removeChild(ta); }
+    });
+  })();
 </script>
 </body>
 </html>
